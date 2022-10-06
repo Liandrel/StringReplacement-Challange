@@ -10,6 +10,8 @@ namespace StringReplaceChall
     {
         private string fullText;
 
+        public delegate string ParameterReplacement(string parameter);
+        private Dictionary<string, string> InTextParameters { get; set; } = new();
         public void ReplaceText(string oldText, string newText, string textPath)
         {
             List<List<string>> fullText = ReadTextFromFile(textPath);
@@ -21,18 +23,41 @@ namespace StringReplaceChall
                 {
                     if (line[i].Contains(oldText))
                     {
-                        int index = line.FindIndex(x => x == line[i]);
-                        if (index != -1)
-                        {
-                            line[index] = line[index].Replace(oldText, newText);
-                        }
+                        line[i] = line[i].Replace(oldText, newText);
                     }
                 }
 
             }
             SaveTextToFile(fullText, textPath);
         }
-        
+
+        public void ReplaceParametersWithText(string textPath, ParameterReplacement AskUserForText)
+        {
+            List<List<string>> fullText = ReadTextFromFile(textPath);
+
+            foreach (var line in fullText)
+            {
+
+                for (int i = 0; i < line.Count; i++)
+                {
+                    if (line[i].Contains('{') && line[i].Contains('}'))
+                    {
+                        string oldText = line[i].Between("{", "}");
+
+                        if(InTextParameters.ContainsKey(oldText) == false)
+                        {
+                            string newText = AskUserForText(oldText);
+                            InTextParameters.Add(oldText, newText);
+                        }
+
+                        line[i] = line[i].Replace('{' + oldText + '}', InTextParameters[oldText]);
+                    }
+                }
+
+            }
+            SaveTextToFile(fullText, textPath);
+        }
+
         private void SaveTextToFile(List<List<string>> textToSave, string textPath)
         {
             List<string> lines = new();
@@ -58,5 +83,9 @@ namespace StringReplaceChall
 
             return output;
         }
+
+
     }
+
+
 }
